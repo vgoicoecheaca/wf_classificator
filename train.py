@@ -11,7 +11,7 @@ from data_handler import DataHandler
 from model import ModelWF
 
 config = Config()
-
+plt.style.use('mystyle.mlstyle')
 DISABLE_GPU = config("training","disable_gpu","bool")
 
 if DISABLE_GPU:
@@ -27,59 +27,40 @@ if DISABLE_GPU:
         pass
 
 # path to data files
-#train_sample              = ["wfs/7to8vov_60to200ma_wfs.txt","wfs/7to8vov_60to200ma_hits.txt","wfs/7to8vov_60to200ma_pars.txt"]
-#val_sample                = ["wfs/7to8vov_60to200ma_wfs_val.txt","wfs/7to8vov_60to200ma_hits_val.txt","wfs/7to8vov_60to200ma_pars_val.txt"]
+data_path       = "wfs/"
+train_sample    = [data_path+i for i in config("training","data","str").split(",")]
+val_sample      = [data_path+i for i in config("training","val_data","str").split(",")]
 
-train_sample              = ["wfs/7to8vov_60to200ma_wfs.txt","wfs/7to8vov_60to200ma_hits.txt","wfs/7to8vov_60to200ma_pars.txt"]
+# call the data generators
 training_data_generator   = DataHandler(train_sample,config)
-#validaiton_data_generator = DataHandler(val_sample,config)
+validation_data_generator = DataHandler(val_sample,config)
 
+# call the model
 model = ModelWF(config) 
 model = model(True)
-
 print(model.summary())
 
-optimizer = Adam(learning_rate=config("training","lr","float"))
+lr = config("training","lr","float")
+optimizer = Adam(learning_rate=lr)
 
 model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
 
-#history = model.fit(x=training_data_generator,validation_data=validaiton_data_generator,
-         #epochs=config("training","epochs","int"),initial_epoch=0)
-history = model.fit(x=training_data_generator,
+#train it
+history = model.fit(x=training_data_generator,validation_data=validation_data_generator,
          epochs=config("training","epochs","int"),initial_epoch=0)
 
-#model.save_weights("models/model_various.h5")
-#plt.style.use('mystyle.mlstyle')
-#styles = ['b-','r-','g-','b--','r--','g--']
-#s      = 0
-#for loss in history.history.keys():
-#   if "loss" in loss:
-#        plt.plot([i for i in range(config("training","epochs","int"))], history.history[loss],styles[s],label=loss)
-#        s += 1
-#plt.legend(loc='best')
-#plt.xlabel("Epochs")
-#plt.ylabel("Loss")
-#plt.grid(True)
-#plt.savefig("loss.pdf")
-#plt.show()
-#plt.clf()
+model.save_weights("models/"+config("training","model","str"))
 
-seq_len = 4000
-model.load_weights("models/model_various.h5")
-x, [y_class_true,y_reg_true] = validaiton_data_generator[0]
-pred_class,pred_reg = model.predict(x)
-idx = [i for i in range(5)]
-for i in idx:
-    plt.plot(x[i],color='blue')
-    print("Pred Hits",np.argmax(pred_class[i]))
-    print("True Hits",np.argmax(y_class_true[i]))
-    print("Pred pos",pred_reg[i])
-    print("True pos",y_reg_true[i])
-    plt.vlines(x=pred_reg[i]*seq_len,ymin=0,ymax=1,color='orange',alpha=0.8,label="start reco")
-    plt.vlines(x=y_reg_true[i]*seq_len,ymin=0,ymax=1,color='green',alpha=0.8,label="start truth")
-    plt.text(x=seq_len*0.8,y=0.85,s="True hits = "+str(np.argmax(y_class_true[i])),color='green')
-    plt.text(x=seq_len*0.8,y=0.80,s="Reco hits = "+str(np.argmax(pred_class[i])),color='orange')
-    plt.legend(loc='best')
-    plt.show()
-exit()
+styles = ['b-','r-','g-','b--','r--','g--']
+s      = 0
+for loss in history.history.keys():
+   if "loss" in loss:
+        plt.plot([i for i in range(config("training","epochs","int"))], history.history[loss],styles[s],label=loss)
+        s += 1
+plt.legend(loc='best')
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.grid(True)
+plt.savefig("plots/loss.pdf")
+plt.clf()
 
