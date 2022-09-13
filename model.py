@@ -25,6 +25,18 @@ class ModelWF(Model):
         self.act_class              = config("training","act_class",'str')
         self.act_reg                = config("training","act_reg",'str')
 
+    def call(self,train=True):
+        input                 = Input(shape=(self.sequence_size,1),name="input")
+        base                  = self.base(input)
+        flatten               = Flatten()(base)
+        dense                 = Dense(units=192,activation=self.activation)(flatten)
+        dense_class           = Dense(units=32,activation=self.activation)(dense)
+        dense_reg             = Dense(units=32,activation=self.activation)(dense)
+        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class')(dense_class)
+        out_2                 = Dense(1,activation=self.act_reg,name='reg')(dense_reg)
+                                                                                                            
+        return Model(input,outputs=[out_1,out_2])
+
     def base(self,x):
         conv                 = Conv1D(filters=2,kernel_size=1,name="conv0",activation=self.activation)(x)
         pool                 = MaxPool1D(2)(conv)     
@@ -38,19 +50,26 @@ class ModelWF(Model):
         pool                 = MaxPool1D(4)(conv)
         conv                 = Conv1D(filters=64,kernel_size=2,name="conv6",kernel_regularizer=l2(self.l2),activation=self.activation)(pool)
         pool                 = MaxPool1D(4)(conv)
-        #conv                 = Conv1D(filters=128,kernel_size=2,name="conv7",kernel_regularizer=l2(self.l2),activation=self.activation)(pool)
-        #pool                 = MaxPool1D(4)(conv)
 
         return pool
 
-    def call(self,train=True):
+    def HyperModel(self,units1,units2,units3,activation):
         input                 = Input(shape=(self.sequence_size,1),name="input")
         base                  = self.base(input)
         flatten               = Flatten()(base)
-        dense                 = Dense(192,activation=self.activation)(flatten)
-        dense_class           = Dense(32,activation=self.activation)(dense)
-        dense_reg             = Dense(32,activation=self.activation)(dense)
+        dense                 = Dense(units=units1,activation=self.activation)(flatten)
+        dense_class           = Dense(units=units2,activation=self.activation)(dense)
+        dense_reg             = Dense(units=units3,activation=self.activation)(dense)  
         out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class')(dense_class)
-        out_2                 = Dense(1,activation=self.act_reg,name='reg')(dense_reg)
-
+        out_2                 = Dense(1,activation,name='reg')(dense_reg)
+                                                                                                            
         return Model(input,outputs=[out_1,out_2])
+
+
+
+
+
+
+
+
+
