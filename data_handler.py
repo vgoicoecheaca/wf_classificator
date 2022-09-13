@@ -1,3 +1,6 @@
+'''Data Handler structure credits to https://github.com/Socret360/object-detection-in-keras'''
+
+
 import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
@@ -7,7 +10,7 @@ tf.autograph.set_verbosity(8)
 from tensorflow.data import Dataset as ds
 import csv 
 
-from utils.augmentation_utils import flip_sequence,scaling,window_slicing,magnitude_warping
+from utils.augmentation_utils import flip_sequence,window_slicing
 import matplotlib.pyplot as plt
 plt.style.use('mystyle.mlstyle')
 
@@ -33,9 +36,7 @@ class DataHandler(tf.keras.utils.Sequence):
 
         self.augment       = augment
         self.augmentations = [flip_sequence.flip_sequence(p=self.flipping),
-                              scaling.scaling(p=0),
-                              window_slicing.window_slicing(p=self.sliding),                # window sliding, should change the name... 
-                              magnitude_warping.magnitude_warping(p=0)] 
+                              window_slicing.window_slicing(p=self.sliding)]              # window sliding, should change the name... 
 
         self.on_epoch_end()
 
@@ -90,10 +91,12 @@ class DataHandler(tf.keras.utils.Sequence):
 
             #define labels as the start of the hit (time, regression) and the ammount of hits (int, classification) 
             y_true_class = np.zeros(self.n_classes,dtype='int32')
-            assert len(locations) <= self.n_classes, "Found WF with n_hits > n_classes"
-            y_true_class[len(locations)] = 1                                            # one-hot encoded
+            #assert len(locations) <= self.n_classes, "Found WF with n_hits > n_classes"
+
+            y_true_class[len(locations) if len(locations) <self.n_classes else -1] = 1                                            # one-hot encoded
             y_true_reg = locations[0] / self.sequence_size if np.any(locations) else 0
 
+            sequence = np.negative(sequence)
             if self.normalization == 1: 
                 sequence = (sequence - np.average(sequence)) / np.std(sequence)
             else:
