@@ -73,7 +73,8 @@ class DataHandler(tf.keras.utils.Sequence):
                 print(y_reg[i])
                 print("WF with ",np.argwhere(y_class[i]==1),"hits")
                 print(y_class[i]) 
-                plt.show()
+                plt.savefig("plots/fig"+str(i)+".png")
+                plf.clf()
             exit()
 
         return X, [y_class,y_reg]
