@@ -62,21 +62,21 @@ hp_build_model(keras_tuner.HyperParameters())
 tuner = keras_tuner.RandomSearch(
     hypermodel=hp_build_model,
     objective="val_loss",
-    max_trials=3,
-    executions_per_trial=3,
+    max_trials=config("hyperparameters","max_trials","int"),
+    executions_per_trial=config("hyperparameters","exec_per_trial","int"),
     overwrite=True,
     directory="hp",
     project_name="wf_classificator",
 )
 
-tuner.search(x=training_data_generator,validation_data=validation_data_generator,epochs=1)
+tuner.search(x=training_data_generator,validation_data=validation_data_generator,epochs=config("hyperparameters","epochs","int"))
 models     = tuner.get_best_models(num_models=1)
 best_model = models[0]
 
 print(tuner.results_summary())
 print(best_model.summary())
 
-history = best_model.fit(x=training_data_generator,validation_data=validation_data_generator,epochs=2)
+history = best_model.fit(x=training_data_generator,validation_data=validation_data_generator,epochs=config("training","epochs","int"))
 
 model.save_weights("models/"+config("training","model","str"))
 
