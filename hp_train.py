@@ -6,6 +6,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import AUC
 import keras_tuner
+from keras.callbacks import EarlyStopping
 
 from config import Config
 from data_handler import DataHandler
@@ -61,7 +62,7 @@ hp_build_model(keras_tuner.HyperParameters())
 
 tuner = keras_tuner.RandomSearch(
     hypermodel=hp_build_model,
-    objective="val_loss",
+    objective=config("hyperparameters","objective","str"),
     max_trials=config("hyperparameters","max_trials","int"),
     executions_per_trial=config("hyperparameters","exec_per_trial","int"),
     overwrite=True,
@@ -76,9 +77,10 @@ best_model = models[0]
 print(tuner.results_summary())
 print(best_model.summary())
 
-history = best_model.fit(x=training_data_generator,validation_data=validation_data_generator,epochs=config("training","epochs","int"))
+history = best_model.fit(x=training_data_generator,validation_data=validation_data_generator,epochs=config("training","epochs","int"),
+            callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 
-model.save_weights("models/"+config("training","model","str"))
+best_model.save_weights("models/"+config("training","model","str"))
 
 styles = ['b-','r-','g-','b--','r--','g--']
 s      = 0

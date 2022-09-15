@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import AUC
+from keras.callbacks import EarlyStopping
 
 from config import Config
 from data_handler import DataHandler
@@ -45,9 +46,10 @@ optimizer = Adam(learning_rate=lr)
 
 model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
 
-#train it
+#train
 history = model.fit(x=training_data_generator,validation_data=validation_data_generator,
-         epochs=config("training","epochs","int"),initial_epoch=0)
+         epochs=config("training","epochs","int"),initial_epoch=0,
+         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 
 model.save_weights("models/"+config("training","model","str"))
 
