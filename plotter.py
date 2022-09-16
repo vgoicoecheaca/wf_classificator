@@ -1,6 +1,5 @@
 
 import matplotlib.pyplot as plt
-
 import numpy as np 
 
 plt.style.use('mystyle.mlstyle')
@@ -14,7 +13,7 @@ class Plotter():
     def roc(self,fpr,tpr):
         for cl in range(1,self.n_classes):
             roc_area = float(np.abs(round(np.trapz(tpr[cl],x=fpr[cl]),2)))
-            print(str(roc_area))
+            print("ROC Area of ",str(cl),str(roc_area))
             plt.step(fpr[cl],tpr[cl],label=r"$N_{{{}}}$".format(cl))
         plt.plot([0, 1], [0, 1], 'k--')
         plt.xlabel('False positive rate')
@@ -29,7 +28,7 @@ class Plotter():
 
     def acs(self,pred_class_instances,true_class_instances):
         #plot accuracy, independent of threshold
-        print(pred_class_instances/true_class_instances,true_class_instances)
+        print("Accs",pred_class_instances/true_class_instances,true_class_instances)
         plt.bar(np.arange(self.n_classes),100*pred_class_instances/true_class_instances,width =0.6,alpha=0.8)
         plt.hlines(y=100,xmin=-0.8,xmax=self.n_classes+0.05,linestyles='--',colors='r')
         plt.xlabel(r"$N_{hits}$")
@@ -58,8 +57,8 @@ class Plotter():
         g_idx   = int(self.pars.index("ma"))
         for vi,v in enumerate(np.unique(pars[:,vov_idx])):
             for g in np.unique(pars[:,g_idx]):
-                mask = (class_true==0) & (pars[:,g_idx]==g) & (pars[:,vov_idx]==v)                                         # implement automatic way of doing this
-                plt.scatter(g,len(class_pred[mask & (class_pred==1)])/len(class_true[mask]),marker='x',color='blue' if vi==0 else 'red' ,label = str(v)+" VoV" if s in [0,10] else None)
+                mask = (class_true!=0) & (pars[:,g_idx]==g) & (pars[:,vov_idx]==v)                                         # implement automatic way of doing this
+                plt.scatter(g,len(class_pred[mask & (class_pred==0)])/len(class_true[mask]),marker='x',color='blue' if vi==0 else 'red' ,label = str(v)+" VoV" if s in [0,10] else None)
                 s += 1
         plt.xlabel('MA Gate [ns]')
         plt.ylabel('Fake Hits Freq')
@@ -76,8 +75,7 @@ class Plotter():
         vov_idx = int(self.pars.index("vov"))
         g_idx   = int(self.pars.index("ma"))
         for vi,v in enumerate(np.unique(pars[:,vov_idx])):
-            print(vi)
-            for g in np.unique(pars[:,g_idx]):
+            for g in np.unique(pars[:,g_idx]): 
                 mask = (class_true==1) & (pars[:,g_idx]==g) & (pars[:,vov_idx]==v)                                             # implement automatic way of doing this
                 plt.scatter(g,len(class_pred[mask & (class_pred==1)])/len(class_true[mask]),marker='x',color='blue' if vi==0 else 'red' ,label = str(v)+" VoV" if s in [0,10] else None)
                 s += 1

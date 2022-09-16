@@ -1,11 +1,11 @@
 '''Data Handler structure credits to https://github.com/Socret360/object-detection-in-keras'''
 
-
-import warnings
-warnings.filterwarnings('ignore')
+#import warnings
+#warnings.filterwarnings('ignore')
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
 tf.autograph.set_verbosity(8)
 from tensorflow.data import Dataset as ds
 import csv 
@@ -14,10 +14,10 @@ from utils.augmentation_utils import flip_sequence,window_slicing
 import matplotlib.pyplot as plt
 plt.style.use('mystyle.mlstyle')
 
-class DataHandler(tf.keras.utils.Sequence):
+class DataHandler():
     def __init__(self,samples,config,augment=True):
         self.sequence_size           = config("data","sequence_size","int")
-        self.normalization           = config("data","normalization","int")
+        self.normalization           = config("data","normalization","str")
         self.n_classes               = config("data","n_classes","int") + 1
         self.batch_size              = config("data","batch_size","int")
         self.truncated_size          = config("data","truncated_size","int")
@@ -32,20 +32,27 @@ class DataHandler(tf.keras.utils.Sequence):
         self.locations  = self.load_locations(samples[1])
         self.parameters = self.load_parameters(samples[2])
 
-        self.indices   = range(0,self.n_entries)
-
         self.augment       = augment
         self.augmentations = [flip_sequence.flip_sequence(p=self.flipping),
                               window_slicing.window_slicing(p=self.sliding)]              # window sliding, should change the name... 
 
-        self.on_epoch_end()
+        # process each sequence, create labels
+        self.x            = np.zeros((len(self.sequences),self.sequence_size),dtype=float)
+        self.y_true_class = np.zeros((len(self.sequences),self.n_classes),dtype=float)
+        self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
+        for i,(seq,locs) in enumerate(zip(self.sequences,self.locations)):
+            if 0 in locs: locs = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
+            self.x[i], locs = self.__augment(np.negative(self.sequences[i]),locs)
+            self.y_true_class[i,len(locs) if len(locs) < self.n_classes else -1] = 1                   # one hot encoded
+            self.y_true_reg[i] = locs[0] / self.sequence_size if np.any(locs) else 0
+            if self.normalization == "av": self.x[i] = (self.x[i] - np.average(self.x[i])) / np.std(self.x[i])
+            if self.normalization == 'minmax': self.x[i] = (self.x[i] - np.min(self.x[i])) / (np.max(self.x[i]) - np.min(self.x[i]))
 
-    def __len__(self):
-        return len(self.indices) // self.batch_size
+        if self.test:
+            self.show_wf_and_label(5)
 
-    def on_epoch_end(self):
-        self.index = np.arange(len(self.indices))
-        np.random.shuffle(self.index)
+    def __call__(self):
+        return self.x, [self.y_true_class,self.y_true_reg]
 
     def __augment(self, sequence, locations):
         augmented_sequence,augmented_locations = sequence,locations
@@ -57,59 +64,21 @@ class DataHandler(tf.keras.utils.Sequence):
         else:
             return sequence,locations
 
-    def __getitem__(self,index):
-        index = self.index[index * self.batch_size:(index + 1) * self.batch_size]
-        batch = [self.indices[k] for k in index]
-
-        X, y_class, y_reg  = self.__get_data(batch)   
-        X, y_class, y_reg  = tf.convert_to_tensor(X), tf.convert_to_tensor(y_class), tf.convert_to_tensor(y_reg)
-
-        ##for testing only
-        if self.test:
-            for i in np.random.randint(low=0,high=self.batch_size,size=10):
-                plt.plot(X[i])
-                plt.vlines(x=y_reg[i]*self.sequence_size,ymin=0,ymax=1,color='red')
-                print("WF sart at ", y_reg[i]*self.sequence_size)
-                print(y_reg[i])
-                print("WF with ",np.argwhere(y_class[i]==1),"hits")
-                print(y_class[i]) 
+    def show_wf_and_label(self,n):
+            print(self.y_true_reg.shape)
+            for i in np.random.randint(low=0,high=self.batch_size,size=n):
+                plt.plot(self.x[i])
+                print(self.y_true_reg[i])
+                plt.vlines(x=self.y_true_reg[i]*self.sequence_size,ymin=0,ymax=np.max(self.x[i]),color='red')
+                print("WF sart at ",self.y_true_reg[i]*self.sequence_size)
+                print(self.y_true_reg[i])
+                print("WF with ",np.argwhere(self.y_true_class[i]==1),"hits")
+                print(self.y_true_reg[i]) 
                 plt.savefig("plots/fig"+str(i)+".png")
-                plf.clf()
+                plt.clf()
+            plt.plot(self.x[10])
+            plt.show()
             exit()
-
-        return X, [y_class,y_reg]
-
-    def __get_data(self,batch):
-        X                   = []
-        y_reg,y_class       = [],[]
-        self.augmented_locs = []
-        self.pars           = []
-
-        for batch_idx in batch:
-            sequence , locations = self.sequences[batch_idx], self.locations[batch_idx] 
-            if 0 in locations: locations = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
-            sequence, locations = self.__augment(sequence,locations)
-
-            #define labels as the start of the hit (time, regression) and the ammount of hits (int, classification) 
-            y_true_class = np.zeros(self.n_classes,dtype='int32')
-            #assert len(locations) <= self.n_classes, "Found WF with n_hits > n_classes"
-
-            y_true_class[len(locations) if len(locations) <self.n_classes else -1] = 1                                            # one-hot encoded
-            y_true_reg = locations[0] / self.sequence_size if np.any(locations) else 0
-
-            sequence = np.negative(sequence)
-            if self.normalization == 1: 
-                sequence = (sequence - np.average(sequence)) / np.std(sequence)
-            else:
-                sequence = (sequence - np.min(sequence)) / (np.max(sequence)-np.min(sequence))
-            
-            X.append(np.expand_dims(np.array(sequence,dtype=float),axis=-1))                  
-            y_reg.append(y_true_reg)
-            y_class.append(y_true_class)
-            self.augmented_locs.append(locations)
-            self.pars.append(self.parameters[batch_idx]) 
-
-        return X, np.asarray(y_class), np.asarray(y_reg) 
 
     def load_sequences(self,sample): 
         df            = pd.read_csv(sample,header=None,delimiter=" ")        
@@ -140,5 +109,5 @@ class DataHandler(tf.keras.utils.Sequence):
 
     def load_parameters(self,sample):  return np.loadtxt(sample) 
         
-    def get_locs(self): return np.asarray(self.augmented_locs)
-    def get_pars(self): return self.pars
+    def get_locs(self): return self.locations.numpy()
+    def get_pars(self): return self.parameters

@@ -7,8 +7,6 @@ from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import AUC
 import keras_tuner
 from keras.callbacks import EarlyStopping
-from tensorflow.keras import mixed_precision
-mixed_precision.set_global_policy('mixed_float16')
 
 from config import Config
 from data_handler import DataHandler
@@ -37,6 +35,10 @@ val_sample      = [data_path+i for i in config("training","val_data","str").spli
 
 training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
+
+#importing datasets
+x_train, [y_train_class,y_train_reg]             = training_data_generator()
+x_val,   [y_val_class,y_val_reg]                 = validation_data_generator()
 
 model = ModelWF(config) 
 
@@ -72,7 +74,11 @@ tuner = keras_tuner.RandomSearch(
     project_name="wf_classificator",
 )
 
-tuner.search(x=training_data_generator,validation_data=validation_data_generator,epochs=config("hyperparameters","epochs","int"))
+tuner.search(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),
+        epochs=config("hyperparameters","epochs","int"),
+        callbacks = [EarlyStopping(monitor=config("hyperparameters","objective","str"),patience=config("hyperparameters","patience","int"),mode="min")])
+)
+
 models     = tuner.get_best_models(num_models=1)
 best_model = models[0]
 

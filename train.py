@@ -1,4 +1,3 @@
-import warnings
 import numpy as np 
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -6,9 +5,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import AUC
 from keras.callbacks import EarlyStopping
-from tensorflow.keras import mixed_precision
-mixed_precision.set_global_policy('mixed_float16')
-
 
 from config import Config
 from data_handler import DataHandler
@@ -39,6 +35,10 @@ val_sample      = [data_path+i for i in config("training","val_data","str").spli
 training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
 
+#importing datasets
+x_train, [y_train_class,y_train_reg]             = training_data_generator()
+x_val,   [y_val_class,y_val_reg]                 = validation_data_generator()
+
 # call the model
 model = ModelWF(config) 
 model = model(True)
@@ -50,9 +50,10 @@ optimizer = Adam(learning_rate=lr)
 model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
 
 #train
-history = model.fit(x=training_data_generator,validation_data=validation_data_generator,
+history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),
          epochs=config("training","epochs","int"),initial_epoch=0,
-         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
+         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")],
+         workers=10)
 
 model.save_weights("models/"+config("training","model","str"))
 

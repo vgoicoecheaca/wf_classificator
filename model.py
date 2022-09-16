@@ -12,6 +12,7 @@ from tensorflow.keras.layers import (Conv1D,
                                     Dropout,
                                     Reshape,
                                     Dense)
+
 import tensorflow as tf
 
 class ModelWF(Model):
@@ -32,8 +33,8 @@ class ModelWF(Model):
         dense                 = Dense(units=192,activation=self.activation)(flatten)
         dense_class           = Dense(units=32,activation=self.activation)(dense)
         dense_reg             = Dense(units=32,activation=self.activation)(dense)
-        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class')(dense_class)
-        out_2                 = Dense(1,activation=self.act_reg,name='reg')(dense_reg)
+        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
+        out_2                 = Dense(1,activation=self.act_reg,name='reg',dtype='float32')(dense_reg)
                                                                                                             
         return Model(input,outputs=[out_1,out_2])
 
@@ -60,8 +61,8 @@ class ModelWF(Model):
         dense                 = Dense(units=units1,activation=act_hidden)(flatten)
         dense_class           = Dense(units=units2,activation=act_hidden)(dense)
         dense_reg             = Dense(units=units3,activation=act_hidden)(dense)  
-        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class')(dense_class)
-        out_2                 = Dense(1,act_reg,name='reg')(dense_reg)
+        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
+        out_2                 = Dense(1,act_reg,name='reg',dtype='float32')(dense_reg)
                                                                                                             
         return Model(input,outputs=[out_1,out_2])
 
