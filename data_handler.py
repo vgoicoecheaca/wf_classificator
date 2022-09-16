@@ -16,12 +16,11 @@ plt.style.use('mystyle.mlstyle')
 
 class DataHandler():
     def __init__(self,samples,config,augment=True):
-        self.sequence_size           = config("data","sequence_size","int")
         self.normalization           = config("data","normalization","str")
         self.n_classes               = config("data","n_classes","int") + 1
         self.batch_size              = config("data","batch_size","int")
+        self.sequence_size           = config("data","sequence_size","int")
         self.truncated_size          = config("data","truncated_size","int")
-        self.steps                   = np.arange(0,self.sequence_size,self.truncated_size)
 
         self.test                    = config('training','test','bool')
 
@@ -29,6 +28,7 @@ class DataHandler():
         self.sliding                 = config('augmentation','sliding','float')
 
         self.sequences  = self.load_sequences(samples[0])
+        self.steps                   = np.arange(0,self.sequence_size,self.truncated_size)
         self.locations  = self.load_locations(samples[1])
         self.parameters = self.load_parameters(samples[2])
 
@@ -83,7 +83,7 @@ class DataHandler():
     def load_sequences(self,sample): 
         df            = pd.read_csv(sample,header=None,delimiter=" ")        
         df            = df.to_numpy().reshape(df.shape[0]*int(self.sequence_size/self.truncated_size),self.truncated_size)              # truncate waveforms into chunks
-        self.n_entries  = df.shape[0]
+        self.n_entries      = df.shape[0]
         self.input_size = df.shape
 
         return df 

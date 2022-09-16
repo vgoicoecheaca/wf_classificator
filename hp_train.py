@@ -51,7 +51,7 @@ hp_lr        = [float(i) for i in config("hyperparameters","lr","str").split(","
 hp_l2        = [float(i) for i in config("hyperparameters","l2","str").split(",")]
 
 def hp_build_model(hp):
-    units             = [hp.Int("units",min_value=hp_dense[i][0],max_value=hp_dense[i][1],step=hp_dense[i][-1]) for i in range(len(hp_dense)) ]
+    units             = [hp.Int("units"+str(i),min_value=hp_dense[i][0],max_value=hp_dense[i][1],step=hp_dense[i][-1]) for i in range(len(hp_dense)) ]
     acts              = [hp.Choice("activation_reg_out",hp_act_reg),hp.Choice("activation_hidden",hp_act_hid)]
     lr                = hp.Float("lr",min_value=hp_lr[0],max_value=hp_lr[1],sampling='log')
     l2                = hp.Float("l2",min_value=hp_l2[0],max_value=hp_l2[1],sampling='log') 
@@ -77,7 +77,6 @@ tuner = keras_tuner.RandomSearch(
 tuner.search(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),
         epochs=config("hyperparameters","epochs","int"),
         callbacks = [EarlyStopping(monitor=config("hyperparameters","objective","str"),patience=config("hyperparameters","patience","int"),mode="min")])
-)
 
 models     = tuner.get_best_models(num_models=1)
 best_model = models[0]
