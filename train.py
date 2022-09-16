@@ -6,6 +6,9 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import AUC
 from keras.callbacks import EarlyStopping
+from tensorflow.keras import mixed_precision
+mixed_precision.set_global_policy('mixed_float16')
+
 
 from config import Config
 from data_handler import DataHandler
