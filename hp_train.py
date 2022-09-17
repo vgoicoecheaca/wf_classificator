@@ -84,7 +84,7 @@ best_model = models[0]
 print(tuner.results_summary())
 print(best_model.summary())
 
-history = best_model.fit(x=training_data_generator,validation_data=validation_data_generator,epochs=config("training","epochs","int"),
+history = best_model.fit(x=x_train,y=[y_tran_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),epochs=config("training","epochs","int"),
             callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 
 best_model.save_weights("models/"+config("training","model","str"))
