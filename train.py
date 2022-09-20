@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import BinaryCrossentropy
+from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.metrics import AUC
 from keras.callbacks import EarlyStopping
 
@@ -45,6 +45,7 @@ model = model(True)
 print(model.summary())
 
 lr = config("training","lr","float")
+loss = CategoricalCrossentropy(from_logits=True)
 optimizer = Adam(learning_rate=lr)
 
 model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
@@ -52,16 +53,14 @@ model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
 #train
 history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),
          epochs=config("training","epochs","int"),initial_epoch=0,
-         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")],
-         workers=10)
+         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 
 model.save_weights("models/"+config("training","model","str"))
-
 styles = ['b-','r-','g-','b--','r--','g--']
 s      = 0
 for loss in history.history.keys():
    if "loss" in loss:
-        plt.plot([i for i in range(config("training","epochs","int"))], history.history[loss],styles[s],label=loss)
+        plt.plot(history.history[loss],styles[s],label=loss)
         s += 1
 plt.legend(loc='best')
 plt.xlabel("Epochs")
