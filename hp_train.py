@@ -60,14 +60,14 @@ def hp_build_model(hp):
     optimizer = Adam(learning_rate=lr) 
     hp_model.compile(optimizer=optimizer,
                      loss=["categorical_crossentropy","mae"],
-                     metrics=CategoricalAccuracy())
+                     metrics='categorical_accuracy')
 
     return hp_model
 
 hp_build_model(keras_tuner.HyperParameters())
 tuner = keras_tuner.RandomSearch(
     hypermodel=hp_build_model,
-    objective=config("hyperparameters","objective","str"),
+    objective=keras_tuner.Objective(config("hyperparameters","objective","str"), direction=config('hyperparameters','direction','str')),
     max_trials=config("hyperparameters","max_trials","int"),
     executions_per_trial=config("hyperparameters","exec_per_trial","int"),
     overwrite=True,
@@ -75,7 +75,6 @@ tuner = keras_tuner.RandomSearch(
     project_name="wf_classificator",
 )
 
-keras_tuner.Objective(config("hyperparameters","objective","str"), direction="max")
 tuner.search(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),
         epochs=config("hyperparameters","epochs","int"),
         callbacks = [EarlyStopping(monitor=config("hyperparameters","objective","str"),patience=config("hyperparameters","patience","int"),mode="min")])
