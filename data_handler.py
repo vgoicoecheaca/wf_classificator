@@ -39,12 +39,12 @@ class DataHandler():
         # process each sequence, create labels
         self.x            = np.zeros((len(self.sequences),self.sequence_size),dtype=float)
         self.y_true_class = np.zeros((len(self.sequences),self.n_classes),dtype=float)
-        self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
+        #self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
         for i,(seq,locs) in enumerate(zip(self.sequences,self.locations)):
             if 0 in locs: locs = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
             self.x[i], locs = self.__augment(np.negative(self.sequences[i]),locs)
             self.y_true_class[i,len(locs) if len(locs) < self.n_classes else -1] = 1                   # one hot encoded
-            self.y_true_reg[i] = locs[0] / self.sequence_size if np.any(locs) else 0
+            #self.y_true_reg[i] = locs[0] / self.sequence_size if np.any(locs) else 0
             if self.normalization == "av": self.x[i] = (self.x[i] - np.average(self.x[i])) / np.std(self.x[i])
             if self.normalization == 'minmax': self.x[i] = (self.x[i] - np.min(self.x[i])) / (np.max(self.x[i]) - np.min(self.x[i]))
 
@@ -52,7 +52,8 @@ class DataHandler():
             self.show_wf_and_label(5)
 
     def __call__(self):
-        return self.x, [self.y_true_class,self.y_true_reg]
+        return self.x, self.y_true_class
+        #return self.x, [self.y_true_class,self.y_true_reg]
 
     def __augment(self, sequence, locations):
         augmented_sequence,augmented_locations = sequence,locations
@@ -65,7 +66,6 @@ class DataHandler():
             return sequence,locations
 
     def show_wf_and_label(self,n):
-            print(self.y_true_reg.shape)
             for i in np.random.randint(low=0,high=self.batch_size,size=n):
                 plt.plot(self.x[i])
                 print(self.y_true_reg[i])

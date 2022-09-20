@@ -37,8 +37,10 @@ training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
 
 #importing datasets
-x_train, [y_train_class,y_train_reg] = training_data_generator()
-x_val,   [y_val_class,y_val_reg]    = validation_data_generator()
+#x_train, [y_train_class,y_train_reg] = training_data_generator()
+#x_val,   [y_val_class,y_val_reg]    = validation_data_generator()
+x_train, y_train_class = training_data_generator()
+x_val,   y_val_class    = validation_data_generator()
 
 model = ModelWF(config) 
 
@@ -75,7 +77,7 @@ tuner = keras_tuner.RandomSearch(
     project_name="wf_classificator",
 )
 
-tuner.search(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),
+tuner.search(x=x_train,y=y_train_class,validation_data=(x_val,y_val_class),
         epochs=config("hyperparameters","epochs","int"),
         callbacks = [EarlyStopping(monitor=config("hyperparameters","objective","str"),patience=config("hyperparameters","patience","int"),mode="min")])
 

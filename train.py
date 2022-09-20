@@ -37,8 +37,11 @@ training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
 
 #importing datasets
-x_train, [y_train_class,y_train_reg]             = training_data_generator()
-x_val,   [y_val_class,y_val_reg]                 = validation_data_generator()
+#x_train, [y_train_class,y_train_reg]             = training_data_generator()
+#x_val,   [y_val_class,y_val_reg]                 = validation_data_generator()
+x_train, y_train_class             = training_data_generator()
+x_val,   y_val_class                 = validation_data_generator()
+
 
 # call the model
 model = ModelWF(config) 
@@ -51,10 +54,10 @@ optimizer = Adam(learning_rate=lr)
 
 model.compile(optimizer=optimizer,
 	     loss=["categorical_crossentropy","mae"],
-	     metrics=CategoricalAccuracy())
+	     metrics='categorical_accuracy')
 
 #train
-history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),
+history = model.fit(x=x_train,y=y_train_class,validation_data=(x_val,y_val_class) ,batch_size=config("data","batch_size","int"),
          epochs=config("training","epochs","int"),initial_epoch=0,
          callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 

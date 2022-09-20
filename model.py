@@ -29,14 +29,12 @@ class ModelWF(Model):
     def call(self,train=True):
         input                 = Input(shape=(self.sequence_size,1),name="input")
         base                  = self.base(input)
-        flatten               = Flatten()(base)
+        flatten               = Flatten()(base) 
         dense                 = Dense(units=192,activation=self.activation)(flatten)
-        dense_class           = Dense(units=32,activation=self.activation)(dense)
-        dense_reg             = Dense(units=32,activation=self.activation)(dense)
-        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
-        out_2                 = Dense(1,activation=self.act_reg,name='reg',dtype='float32')(dense_reg)
-                                                                                                            
-        return Model(input,outputs=[out_1,out_2])
+        dense                 = Dense(units=32,activation=self.activation)(dense)
+        out                   = Dense(self.n_classes+1,activation=self.act_class,name='out')(dense)
+
+        return Model(input,outputs=out)
 
     def base(self,x):
         conv                 = Conv1D(filters=2,kernel_size=1,name="conv0",activation=self.activation)(x)
@@ -54,17 +52,15 @@ class ModelWF(Model):
 
         return pool
 
-    def HyperModel(self,units1,units2,units3,act_reg,act_hidden,l2):
+    def HyperModel(self,units1,units2,act_reg,act_hidden,l2):
         input                 = Input(shape=(self.sequence_size,1),name="input")
         base                  = self.HyperBase(input,l2,act_hidden)
         flatten               = Flatten()(base)
         dense                 = Dense(units=units1,activation=act_hidden)(flatten)
         dense_class           = Dense(units=units2,activation=act_hidden)(dense)
-        dense_reg             = Dense(units=units3,activation=act_hidden)(dense)  
-        out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
-        out_2                 = Dense(1,act_reg,name='reg',dtype='float32')(dense_reg)
+        out                   = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
                                                                                                             
-        return Model(input,outputs=[out_1,out_2])
+        return Model(input,outputs=out)
 
     def HyperBase(self,x,l2_reg,activation):
         conv                 = Conv1D(filters=2,kernel_size=1,name="conv0",activation=activation)(x)
