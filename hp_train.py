@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import BinaryCrossentropy
-from tensorflow.keras.metrics import AUC
+from tensorflow.keras.metrics import CategoricalAccuracy
 import keras_tuner
 from keras.callbacks import EarlyStopping
 
@@ -37,8 +37,8 @@ training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
 
 #importing datasets
-x_train, [y_train_class,y_train_reg]             = training_data_generator()
-x_val,   [y_val_class,y_val_reg]                 = validation_data_generator()
+x_train, [y_train_class,_train_reg] = training_data_generator()
+x_val,   [y_val_class,y_val_reg]    = validation_data_generator()
 
 model = ModelWF(config) 
 
@@ -58,12 +58,13 @@ def hp_build_model(hp):
 
     hp_model   = model.HyperModel(*units,*acts,l2)
     optimizer = Adam(learning_rate=lr) 
-    hp_model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
+    hp_model.compile(optimizer=optimizer,
+                     loss=["categorical_crossentropy","mae"],
+                     metrics=CategoricalAccuracy())
 
     return hp_model
 
 hp_build_model(keras_tuner.HyperParameters())
-
 tuner = keras_tuner.RandomSearch(
     hypermodel=hp_build_model,
     objective=config("hyperparameters","objective","str"),
@@ -74,6 +75,7 @@ tuner = keras_tuner.RandomSearch(
     project_name="wf_classificator",
 )
 
+keras_tuner.Objective(config("hyperparameters","objective","str"), direction="max")
 tuner.search(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),
         epochs=config("hyperparameters","epochs","int"),
         callbacks = [EarlyStopping(monitor=config("hyperparameters","objective","str"),patience=config("hyperparameters","patience","int"),mode="min")])
@@ -84,7 +86,7 @@ best_model = models[0]
 print(tuner.results_summary())
 print(best_model.summary())
 
-history = best_model.fit(x=x_train,y=[y_tran_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),epochs=config("training","epochs","int"),
+history = best_model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]),epochs=config("training","epochs","int"),
             callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
 
 best_model.save_weights("models/"+config("training","model","str"))
@@ -93,7 +95,7 @@ styles = ['b-','r-','g-','b--','r--','g--']
 s      = 0
 for loss in history.history.keys():
    if "loss" in loss:
-        plt.plot([i for i in range(config("training","epochs","int"))], history.history[loss],styles[s],label=loss)
+        plt.plot(history.history[loss],styles[s],label=loss)
         s += 1
 plt.legend(loc='best')
 plt.xlabel("Epochs")

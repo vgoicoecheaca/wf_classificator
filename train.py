@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.metrics import AUC
+from tensorflow.keras.metrics import CategoricalAccuracy
 from keras.callbacks import EarlyStopping
 
 from config import Config
@@ -17,6 +17,7 @@ DISABLE_GPU = config("training","disable_gpu","bool")
 if DISABLE_GPU:
     try:
         # Disable all GPUS
+
         visible_devices = tf.config.get_visible_devices()
         tf.config.set_visible_devices([], 'GPU')
         visible_devices = tf.config.get_visible_devices()
@@ -48,7 +49,9 @@ lr = config("training","lr","float")
 loss = CategoricalCrossentropy(from_logits=True)
 optimizer = Adam(learning_rate=lr)
 
-model.compile(optimizer=optimizer,loss=["categorical_crossentropy","mae"])
+model.compile(optimizer=optimizer,
+	     loss=["categorical_crossentropy","mae"],
+	     metrics=CategoricalAccuracy())
 
 #train
 history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),
