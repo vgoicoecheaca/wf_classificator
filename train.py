@@ -56,7 +56,7 @@ model.compile(optimizer=optimizer,
 #train
 history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),
          epochs=config("training","epochs","int"),initial_epoch=0,
-         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode="min")])
+         callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode=config("training","mode","str"))])
 
 model.save_weights("models/"+config("training","model","str"))
 styles = ['b-','r-','g-','b--','r--','g--']

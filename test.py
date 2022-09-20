@@ -93,9 +93,9 @@ for i,threshold in enumerate(thresholds):
 
 #Plotting 
 plotter = Plotter(config)
-#plotter.roc(fpr,tpr)
-#plotter.acs(pred_class_instances,true_class_instances)
-#plotter.regs(sample_diff)
+plotter.roc(fpr,tpr)
+plotter.acs(pred_class_instances,true_class_instances)
+plotter.regs(sample_diff)
 plotter.fake(true_class_idx,pred_class_idx,pars)
 plotter.single_hit_eff(true_class_idx,pred_class_idx,pars)
 plotter.double_separation(hit_closeby)
