@@ -37,7 +37,7 @@ training_data_generator   = DataHandler(train_sample,config)
 validation_data_generator = DataHandler(val_sample,config)
 
 #importing datasets
-x_train, [y_train_class,_train_reg] = training_data_generator()
+x_train, [y_train_class,y_train_reg] = training_data_generator()
 x_val,   [y_val_class,y_val_reg]    = validation_data_generator()
 
 model = ModelWF(config) 
