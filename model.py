@@ -30,9 +30,9 @@ class ModelWF(Model):
         input                 = Input(shape=(self.sequence_size,1),name="input")
         base                  = self.base(input)
         flatten               = Flatten()(base)
-        dense                 = Dense(units=192,activation=self.activation)(flatten)
-        dense_class           = Dense(units=32,activation=self.activation)(dense)
-        dense_reg             = Dense(units=32,activation=self.activation)(dense)
+        dense                 = Dense(units=64,activation=self.activation)(flatten)
+        dense_class           = Dense(units=56,activation=self.activation)(dense)
+        dense_reg             = Dense(units=56,activation=self.activation)(dense)
         out_1                 = Dense(self.n_classes+1,activation=self.act_class,name='class',dtype='float32')(dense_class)
         out_2                 = Dense(1,activation=self.act_reg,name='reg',dtype='float32')(dense_reg)
                                                                                                             
