@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.metrics import CategoricalAccuracy
+from tensorflow.keras.losses import BinaryCrossentropy
+from tensorflow.keras.metrics import BinaryAccuracy
 from keras.callbacks import EarlyStopping
 
 from config import Config
@@ -46,12 +46,11 @@ model = model(True)
 print(model.summary())
 
 lr = config("training","lr","float")
-loss = CategoricalCrossentropy(from_logits=True)
 optimizer = Adam(learning_rate=lr)
 
 model.compile(optimizer=optimizer,
-	     loss=["categorical_crossentropy","mae"],
-	     metrics=CategoricalAccuracy())
+	     loss=["binary_crossentropy","mae"],
+         metrics=['binary_accuracy','mae'])
 
 #train
 history = model.fit(x=x_train,y=[y_train_class,y_train_reg],validation_data=(x_val,[y_val_class,y_val_reg]) ,batch_size=config("data","batch_size","int"),

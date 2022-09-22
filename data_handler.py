@@ -17,7 +17,6 @@ plt.style.use('mystyle.mlstyle')
 class DataHandler():
     def __init__(self,samples,config,augment=True):
         self.normalization           = config("data","normalization","str")
-        self.n_classes               = config("data","n_classes","int") + 1
         self.batch_size              = config("data","batch_size","int")
         self.sequence_size           = config("data","sequence_size","int")
         self.truncated_size          = config("data","truncated_size","int")
@@ -38,12 +37,13 @@ class DataHandler():
 
         # process each sequence, create labels
         self.x            = np.zeros((len(self.sequences),self.sequence_size),dtype=float)
-        self.y_true_class = np.zeros((len(self.sequences),self.n_classes),dtype=float)
+        self.y_true_class = np.zeros((len(self.sequences),1),dtype=float)
         self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
         for i,(seq,locs) in enumerate(zip(self.sequences,self.locations)):
             if 0 in locs: locs = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
             self.x[i], locs = self.__augment(np.negative(self.sequences[i]),locs)
-            self.y_true_class[i,len(locs) if len(locs) < self.n_classes else -1] = 1                   # one hot encoded
+            self.y_true_class[i] = 0 if len(locs) == 1 else 1               
+            #self.y_true_class[i,len(locs) if len(locs) < self.n_classes else -1] = 1                   # one hot encoded
             self.y_true_reg[i] = locs[0] / self.sequence_size if np.any(locs) else 0
             if self.normalization == "av": self.x[i] = (self.x[i] - np.average(self.x[i])) / np.std(self.x[i])
             if self.normalization == 'minmax': self.x[i] = (self.x[i] - np.min(self.x[i])) / (np.max(self.x[i]) - np.min(self.x[i]))
