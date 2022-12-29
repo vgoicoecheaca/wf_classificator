@@ -34,24 +34,30 @@ class DataHandler():
         self.augment       = augment
         self.augmentations = [flip_sequence.flip_sequence(p=self.flipping),
                               window_slicing.window_slicing(p=self.sliding)]              # window sliding, should change the name... 
-
+    def __call__(self,lim):
         # process each sequence, create labels
+        self.lim          = lim
         self.x            = np.zeros((len(self.sequences),self.sequence_size),dtype=float)
-        self.y_true_class = np.zeros((len(self.sequences),1),dtype=float)
+        #self.y_true_class = np.zeros((len(self.sequences),4 if self.lim==None else 1),dtype=float)
+        self.y_true_class = np.zeros((len(self.sequences),2),dtype=float)
         self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
         for i,(seq,locs) in enumerate(zip(self.sequences,self.locations)):
             if 0 in locs: locs = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
             self.x[i], locs = self.__augment(np.negative(self.sequences[i]),locs)
-            self.y_true_class[i] = 0 if len(locs) == 1 else 1               
-            #self.y_true_class[i,len(locs) if len(locs) < self.n_classes else -1] = 1                   # one hot encoded
+            if self.lim != None:
+                if self.lim==0:
+                    self.y_true_class[i] = 0 if len(locs)==0 else 1               
+                else:
+                    self.y_true_class[i] = 1 if len(locs)<=2 else 0
+            else:
+                self.y_true_class[i,len(locs) if len(locs) <=2 else -1] = 1 
             self.y_true_reg[i] = locs[0] / self.sequence_size if np.any(locs) else 0
             if self.normalization == "av": self.x[i] = (self.x[i] - np.average(self.x[i])) / np.std(self.x[i])
             if self.normalization == 'minmax': self.x[i] = (self.x[i] - np.min(self.x[i])) / (np.max(self.x[i]) - np.min(self.x[i]))
-
+                                                                                                                                                                   
         if self.test:
             self.show_wf_and_label(5)
 
-    def __call__(self):
         return self.x, [self.y_true_class,self.y_true_reg]
 
     def __augment(self, sequence, locations):
@@ -72,7 +78,7 @@ class DataHandler():
                 plt.vlines(x=self.y_true_reg[i]*self.sequence_size,ymin=0,ymax=np.max(self.x[i]),color='red')
                 print("WF sart at ",self.y_true_reg[i]*self.sequence_size)
                 print(self.y_true_reg[i])
-                print("WF with ",np.argwhere(self.y_true_class[i]==1),"hits")
+                print("WF with label",self.y_true_class[i])
                 print(self.y_true_reg[i]) 
                 plt.savefig("plots/fig"+str(i)+".png")
                 plt.clf()

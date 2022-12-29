@@ -6,7 +6,7 @@ plt.style.use('mystyle.mlstyle')
 
 class Plotter():
     def __init__(self,config):
-        self.n_classes     = config("data","n_classes","int") + 1 
+        self.n_classes     = 2
         self.sequence_size = config("data","sequence_size","int")
         self.pars          = config("data","parameters","str").split(",")
 
