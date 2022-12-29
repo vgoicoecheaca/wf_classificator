@@ -9,7 +9,6 @@ from keras.callbacks import EarlyStopping
 from config import Config
 from data_handler import DataHandler
 from model import ModelWF
-print("Hello there")
 
 config = Config()
 plt.style.use('mystyle.mlstyle')
@@ -28,9 +27,7 @@ if DISABLE_GPU:
         # Invalid device or cannot modify virtual devices once initialized.
         pass
 
-
 # path to data files
-print("Hello there")
 data_path       = "wfs/"
 train_sample    = [data_path+i for i in config("training","data","str").split(",")]
 val_sample      = [data_path+i for i in config("training","val_data","str").split(",")]
@@ -43,8 +40,8 @@ validation_data_generator = DataHandler(val_sample,config)
 x_train_bg, [y_train_class_bg,y_train_reg_bg]     = training_data_generator(0)
 x_val_bg,   [y_val_class_bg,y_val_reg_bg]         = validation_data_generator(0)
 
-x_train_max, [y_train_class_max,y_train_reg_max]  = training_data_generator(2)
-x_val_max,   [y_val_class_max,y_val_reg_max]      = validation_data_generator(2)
+x_train_max, [y_train_class_max,y_train_reg_max]  = training_data_generator(0)
+x_val_max,   [y_val_class_max,y_val_reg_max]      = validation_data_generator(0)
 
 # call the model, fit 
 model = ModelWF(config) 
@@ -57,6 +54,7 @@ model_bg.compile(optimizer=optimizer,loss=['binary_crossentropy'],metrics=['bina
 model_max.compile(optimizer=optimizer,loss=['binary_crossentropy'],metrics=['binary_accuracy'])
 
 def fit_model(x_train,y_train,x_val,y_val,model,bg=False):
+    print(y_train.shape,y_val.shape)
     model.fit(x=x_train,y=y_train,validation_data=(x_val,y_val) ,batch_size=config("data","batch_size","int"),
             epochs=config("training","epochs","int"),initial_epoch=0,
             callbacks=[EarlyStopping(monitor=config("training","monitor","str"),patience=config("training","patience","int"),mode=config("training","mode","str"))])

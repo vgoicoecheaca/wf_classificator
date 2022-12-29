@@ -39,7 +39,7 @@ class DataHandler():
         self.lim          = lim
         self.x            = np.zeros((len(self.sequences),self.sequence_size),dtype=float)
         #self.y_true_class = np.zeros((len(self.sequences),4 if self.lim==None else 1),dtype=float)
-        self.y_true_class = np.zeros((len(self.sequences),2),dtype=float)
+        self.y_true_class = np.zeros((len(self.sequences),1),dtype=float)
         self.y_true_reg   = np.zeros((len(self.sequences),1),dtype=float)
         for i,(seq,locs) in enumerate(zip(self.sequences,self.locations)):
             if 0 in locs: locs = []                                                   # make sure 0 hits are empty so code below recognizes them accordingly (len)
@@ -87,6 +87,7 @@ class DataHandler():
             exit()
 
     def load_sequences(self,sample): 
+        print(sample)
         df            = pd.read_csv(sample,header=None,delimiter=" ")        
         df            = df.to_numpy().reshape(df.shape[0]*int(self.sequence_size/self.truncated_size),self.truncated_size)              # truncate waveforms into chunks
         self.n_entries      = df.shape[0]
@@ -95,17 +96,19 @@ class DataHandler():
         return df 
     
     def load_locations(self,sample):
-        hits_array = np.array([],dtype=object)
-        with open(sample, newline='',) as f:
-            hits_array = np.append(hits_array,list(csv.reader(f,quoting=csv.QUOTE_NONNUMERIC)))
+        hits_array = np.array([0 for i in range(self.n_entries)],dtype=object)
+        with open(sample, newline="") as f:
+            line_reader = csv.reader(f,quoting=csv.QUOTE_NONNUMERIC)
+            for i,row in enumerate(line_reader):
+                hits_array[i] = row
 
-        #split the locations into their corresponding truncated wavforms
+        ##split the locations into their corresponding truncated wfs
         hits_reshaped = np.zeros(self.n_entries,dtype=object)
         n = 0 
         for hits in hits_array:
             for i,step in enumerate(self.steps):
                 if step != self.steps[-1]:
-                    h = np.array(hits)[(hits>step) & (hits<=self.steps[i+1])]
+                   h = np.array(hits)[(hits>step) & (hits<=self.steps[i+1])]
                 else:
                     h = np.array(hits)[(hits>=step)]
                 hits_reshaped[n] = h.tolist() - step if len(h) != 0  else []
